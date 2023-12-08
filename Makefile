@@ -6,11 +6,11 @@ NAMESPACE=$(shell git config --get remote.origin.url |  awk '{split($0,a,"/"); p
 NAME=servicenow
 BINARY=terraform-provider-${NAME}
 VERSION=$(shell cat VERSION)
+BUMP="$(shell go env GOPATH)/bin/gbump"
 OS_NAME=$(shell uname -o | awk '{print tolower($0)}')
 HARDWARE_NAME=$(shell uname -m | awk '{print tolower($0)}' )
 OS_ARCH=$(OS_NAME)_$(HARDWARE_NAME)
-GO_VERSION=$(shell cat .tool-versions |grep '^golang' | awk '{print $$2}')
-GORELEASER_VERSION=$(shell cat .tool-versions | grep '^goreleaser' | awk '{print $$2}')
+
 
 # Allow us to specify where to find the Terraform binary
 # but don't fail if our CI environment doesn't have it installed
@@ -18,9 +18,10 @@ TERRAFORM_CMD:=$(shell which terraform || "echo")
 
 ci: build unit-test
 
-asdf:
+dev-deps:
 	@asdf plugin-add goreleaser https://github.com/kforsthoevel/asdf-goreleaser.git
 	@asdf plugin add golang https://github.com/asdf-community/asdf-golang.git
+	go get github.com/wader/bump/cmd/bump
 
 build:
 	go build -o ${BINARY}
@@ -28,8 +29,15 @@ build:
 snapshot:
 	goreleaser release --clean --snapshot
 
+bump:
+	$(bump) pipeline pipeline 'https://github.com/agilesyndrome/terraform-provider-servicenow.git|*'
+
+
 release:
+	gbump patch -t
+	git push --tags
 	goreleaser release --clean
+
 
 install: build
 	mkdir -p ~/.terraform.d/plugins/${HOSTNAME}/${NAMESPACE}/${NAME}/${VERSION}/${OS_ARCH}
