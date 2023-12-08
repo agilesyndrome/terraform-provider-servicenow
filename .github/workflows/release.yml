@@ -5,33 +5,16 @@ on:
       - "v*"
     branches:
       - main
-      - master
       - 'releases/**'
+      - 'ci/**'
 jobs:
-  goreleaser:
+  ci:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2.3.4
-      - name: Unshallow
-        run: git fetch --prune --unshallow
-      - name: Set up Go
-        uses: actions/setup-go@v2
+      - name: CI
+        uses: agilesyndrome/github-actions@main
         with:
-          go-version: 1.16
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          # These secrets will need to be configured for the repository:
+          makefile_target: ci
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2.5.0
-        with:
-          version: latest
-          args: release --rm-dist
-        env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          # GitHub sets this automatically
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          gpg_passphrase: ${{ secrets.PASSPHRASE }}
